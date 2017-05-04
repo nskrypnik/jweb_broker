@@ -4,7 +4,7 @@ from .defaults import MONGO_HOST, MONGO_PORT, JOBS_COLLECTION_NAME, \
                       POLL_JOBS_DELAY, NUM_OF_WORKERS
 from .job_states import IDLE, OPENED, IN_PROGRESS, FAILED
 from .workers_pool import WorkersPool
-from .tool_inventory import ToolInventory
+from .tools.tool_inventory import ToolInventory
 
 # magic strings:
 STATE = 'state'
@@ -13,7 +13,7 @@ class Broker:
 
     def __init__(self, **kw):
         # create a main loop
-        self.loop = asyncio.get_event_loop()
+        self.loop = kw.get('loop') or asyncio.get_event_loop()
         self._get_options(**kw)
         self._init_db_connection()
         self.jobs_queue = asyncio.Queue()
@@ -50,7 +50,7 @@ class Broker:
     def _init_tool_inventory(self):
         kw = dict(db=self.db, num_of_workers=self.num_of_workers)
         kw.update(self.tool_inventory_extra_kw)
-        self.tool_inventory = self.tool_inventory_class(loop, **kw)
+        self.tool_inventory = self.tool_inventory_class(self.loop, **kw)
 
     def _init_db_connection(self):
         '''Initialize connection to db
@@ -112,9 +112,10 @@ class Broker:
             {'$set': {STATE: state}}
         )
 
-    def run(self):
+    def run(self, is_internal_loop=True):
         '''Start I/O loop
         '''
         self.loop.create_task(self.launch_jobs_manager())
         self.loop.create_task(self.run_scheduler())
-        self.loop.run_forever()
+        if is_internal_loop:
+            self.loop.run_forever()

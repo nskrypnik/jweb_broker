@@ -1,6 +1,6 @@
 import asyncio
-from jweb_driver import DriversPool
-from .defaults import NUM_OF_WORKERS
+from jweb_driver.drivers_pool import DriversPool
+from ..defaults import NUM_OF_WORKERS
 
 class ToolInventoryError(Exception):
     pass
@@ -36,10 +36,10 @@ class ToolInventory(BaseToolInventory):
        database and jweb_driver pool
     '''
 
-    def __init__(self, loop, db=None, num_of_drivers=NUM_OF_WORKERS):
+    def __init__(self, loop, db=None, num_of_workers=NUM_OF_WORKERS):
         super(ToolInventory, self).__init__(loop)
         self.db = db
-        self.jweb_drivers_pool = DriversPool(num_of_drivers, loop)
+        self.jweb_drivers_pool = DriversPool(num_of_workers, loop)
         self.jweb_drivers_pool.run()
         self.id_to_driver = {
             id(driver): driver for driver in self.jweb_drivers_pool.drivers

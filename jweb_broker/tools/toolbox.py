@@ -3,7 +3,7 @@ class ToolBox:
 
     def __init__(self, tool_inventory):
         self.tools = {}
-        self.tool_inventory
+        self.tool_inventory = tool_inventory
 
     async def update(self, list_of_tools):
         self.tools = {}
