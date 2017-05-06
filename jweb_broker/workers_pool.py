@@ -15,5 +15,5 @@ class WorkersPool:
     async def get_worker(self):
         return await self.workers_queue.get()
 
-    def release_worker(self, worker):
+    def release(self, worker):
         self.workers_queue.put_nowait(worker)

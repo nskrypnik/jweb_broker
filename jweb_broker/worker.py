@@ -6,6 +6,7 @@ class Worker:
         self.tool_inventory = tool_inventory
         self.job_data = None
         self.tool_box = ToolBox(tool_inventory)
+        self.report = None
 
     def set_job(self, job_data):
         self.job_data = self.job_data
@@ -15,3 +16,4 @@ class Worker:
         await self.tool_box.update(self.task.tools)
         self.task.set_tool_box(self.tool_box)
         await self.task.perform()
+        self.report = self.task.report

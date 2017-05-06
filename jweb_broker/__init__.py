@@ -18,3 +18,5 @@ from .broker import Broker
 # Task - an abstract class to subclass a task a worker should do to complete a job
 
 # Uses MongoDB as primary database using Motor async driver for it
+
+from .base_report_handler import BaseReportHandler

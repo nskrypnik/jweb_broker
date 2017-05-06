@@ -1,5 +1,5 @@
 
-class BaseTasksLookout:
+class BaseTaskLookout:
 
     def find(self, job_data):
         '''This function should find corresponding task based on data provided

@@ -1,4 +1,6 @@
 
 class TaskReport:
 
-    pass
+    def __init__(self):
+        self.success = False
+        self.error = False

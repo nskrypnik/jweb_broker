@@ -1,2 +1,3 @@
 
-from .base_tasks_lookout import BaseTasksLookout
+from .base_task_lookout import BaseTaskLookout
+from .base_task import BaseTask

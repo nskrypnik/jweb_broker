@@ -1,10 +1,12 @@
 import asyncio
 from motor.motor_asyncio import AsyncIOMotorClient
+from pymongo import ReturnDocument
 from .defaults import MONGO_HOST, MONGO_PORT, JOBS_COLLECTION_NAME, \
                       POLL_JOBS_DELAY, NUM_OF_WORKERS
-from .job_states import IDLE, OPENED, IN_PROGRESS, FAILED
+from .job_states import IDLE, OPENED, IN_PROGRESS, FAILED, DONE
 from .workers_pool import WorkersPool
 from .tools.tool_inventory import ToolInventory
+from .base_report_handler import BaseReportHandler
 
 # magic strings:
 STATE = 'state'
@@ -17,7 +19,9 @@ class Broker:
         self._get_options(**kw)
         self._init_db_connection()
         self.jobs_queue = asyncio.Queue()
+        self.report_queue = asyncio.Queue()
         self._init_tool_inventory()
+        self._init_report_handler()
         self._init_workers_pool()
 
     def _get_options(self, **kw):
@@ -39,6 +43,8 @@ class Broker:
         self.poll_jobs_delay = kw.get('poll_jobs_delay', POLL_JOBS_DELAY)
         self.tool_inventory_class = kw.get('tool_inventory_class', ToolInventory)
         self.tool_inventory_extra_kw = kw.get('tool_inventory_extra_kw', {})
+        self.report_handler_class = kw.get('report_handler_class', BaseReportHandler)
+        self.report_handler_extra_kw = kw.get('report_handler_extra_kw', {})
 
     def _init_workers_pool(self):
         self.workers_pool = WorkersPool(
@@ -51,6 +57,12 @@ class Broker:
         kw = dict(db=self.db, num_of_workers=self.num_of_workers)
         kw.update(self.tool_inventory_extra_kw)
         self.tool_inventory = self.tool_inventory_class(self.loop, **kw)
+
+    def _init_report_handler(self):
+        kw = self.report_handler_extra_kw
+        self.report_handler = self.report_handler_class(
+            self.loop, self.db, self.jobs_collection, **kw
+        )
 
     def _init_db_connection(self):
         '''Initialize connection to db
@@ -96,6 +108,11 @@ class Broker:
             worker = await self.workers_pool.get_worker()
             self.loop.create_task(self.launch_worker_operation(worker, job_data))
 
+    async def run_report_handler(self):
+        while True:
+            report = await self.report_queue.get()
+            self.report_handler.handle(report)
+
     async def launch_worker_operation(self, worker, job_data):
         worker.set_job(job_data)
         await self.update_job_state(job_data, IN_PROGRESS)
@@ -104,12 +121,14 @@ class Broker:
             await self.update_job_state(job_data, DONE)
         else:
             await self.update_job_state(job_data, FAILED)
+        self.report_queue.put_nowait(worker.task.report)
         self.workers_pool.release(worker)
 
     async def update_job_state(self, job_data, state):
-        return await self.jobs_collection.update(
+        return await self.jobs_collection.find_one_and_update(
             {'_id': job_data['_id']},
-            {'$set': {STATE: state}}
+            {'$set': {STATE: state}},
+            return_document=ReturnDocument.AFTER
         )
 
     def run(self, is_internal_loop=True):
@@ -117,5 +136,6 @@ class Broker:
         '''
         self.loop.create_task(self.launch_jobs_manager())
         self.loop.create_task(self.run_scheduler())
+        self.loop.create_task(self.run_report_handler())
         if is_internal_loop:
             self.loop.run_forever()

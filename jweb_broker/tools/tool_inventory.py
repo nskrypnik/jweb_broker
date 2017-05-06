@@ -2,6 +2,7 @@ import asyncio
 from jweb_driver.drivers_pool import DriversPool
 from ..defaults import NUM_OF_WORKERS
 
+
 class ToolInventoryError(Exception):
     pass
 
@@ -11,16 +12,21 @@ class BaseToolInventory:
        workers which implement asyncio access to tools
     '''
 
-    def __init__(self, loop):
+    def __init__(self, loop, **kw):
         self.loop = loop
+        self.db = kw.get('db')
+
+    def get_db(self):
+        return self.db
 
     async def get_tool(self, tool_name):
         '''Get a tool from tool inventory
         '''
-        getter = 'get_%s' % tool_name
-        if not hasattr(self, getter):
+        getter_name = 'get_%s' % tool_name
+        if not hasattr(self, getter_name):
             err_msg = 'Tool \'%s\' cannot be located in inventory' % tool_name
             raise ToolInventoryError(err_msg)
+        getter = getattr(self, getter_name)
         return await getter()
 
     def return_tool(self, tool_name, tool):
@@ -36,18 +42,15 @@ class ToolInventory(BaseToolInventory):
        database and jweb_driver pool
     '''
 
-    def __init__(self, loop, db=None, num_of_workers=NUM_OF_WORKERS):
-        super(ToolInventory, self).__init__(loop)
-        self.db = db
+    def __init__(self, loop, **kw):
+        super(ToolInventory, self).__init__(loop, **kw)
+        num_of_workers = kw.get('num_of_workers', NUM_OF_WORKERS)
         self.jweb_drivers_pool = DriversPool(num_of_workers, loop)
         self.jweb_drivers_pool.run()
         self.id_to_driver = {
             id(driver): driver for driver in self.jweb_drivers_pool.drivers
         }
         self._available_drivers = list(self.id_to_driver.keys())
-
-    def get_db(self):
-        return self.db
 
     async def get_jweb_driver(self):
         while True:
