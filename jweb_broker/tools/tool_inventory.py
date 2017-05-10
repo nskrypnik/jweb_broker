@@ -32,8 +32,9 @@ class BaseToolInventory:
     def return_tool(self, tool_name, tool):
         '''Return tool back to tool inventory
         '''
-        func = 'return_%s' % tool_name
-        if hasattr(self, func):
+        func_name = 'return_%s' % tool_name
+        if hasattr(self, func_name):
+            func = getattr(self, func_name)
             func(tool)
 
 

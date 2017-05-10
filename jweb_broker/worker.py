@@ -16,4 +16,5 @@ class Worker:
         await self.tool_box.update(self.task.tools)
         self.task.set_tool_box(self.tool_box)
         await self.task.perform()
+        self.tool_box.release_tools()
         self.report = self.task.report

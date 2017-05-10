@@ -114,7 +114,7 @@ class Broker:
             self.report_handler.handle(report)
 
     async def launch_worker_operation(self, worker, job_data):
-        worker.set_job(job_data)
+        worker.set_job(job_data['data'])
         await self.update_job_state(job_data, IN_PROGRESS)
         await worker.do_job()
         if worker.report.success:

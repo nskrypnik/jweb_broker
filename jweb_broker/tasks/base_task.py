@@ -1,3 +1,4 @@
+import traceback
 from .task_report import TaskReport
 
 class BaseTask:
@@ -17,9 +18,15 @@ class BaseTask:
 
     async def perform(self):
         self.report = TaskReport()
-        await self.do()
-        if not self.report.error:
-            self.report.success = True
+        try:
+            await self.do()
+            if not self.report.failed:
+                self.report.success = True
+        except Exception as e:
+            self.report.failed = True
+            self.report.error = e
+            self.report.traceback = traceback.format_exc()
+
 
     async def do(self):
         raise NotImplemented('Should be implemented in subclass')
