@@ -32,9 +32,9 @@ class Broker:
         except KeyError:
             raise Exception('db_name parameter should be provided')
         try:
-            self.tasks_lookout  = kw['tasks_lookout']
+            self.task_lookout  = kw['task_lookout']
         except KeyError:
-            raise Exception('Tasks lookout object should be provided to broker constructor')
+            raise Exception('Task lookout object should be provided to broker constructor')
         self.db_host = kw.get('db_host', MONGO_HOST)
         self.db_port = kw.get('db_port', MONGO_PORT)
         self.jobs_collection_name = kw.get('jobs_collection_name', JOBS_COLLECTION_NAME)
@@ -49,7 +49,7 @@ class Broker:
     def _init_workers_pool(self):
         self.workers_pool = WorkersPool(
             self.num_of_workers,
-            self.tasks_lookout,
+            self.task_lookout,
             self.tool_inventory
         )
 
@@ -111,7 +111,7 @@ class Broker:
     async def run_report_handler(self):
         while True:
             report = await self.report_queue.get()
-            self.report_handler.handle(report)
+            await self.report_handler.handle(report)
 
     async def launch_worker_operation(self, worker, job_data):
         worker.set_job(job_data['data'])

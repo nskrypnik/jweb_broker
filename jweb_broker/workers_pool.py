@@ -5,11 +5,11 @@ WAIT_TIMEOUT = 0.5
 
 class WorkersPool:
 
-    def __init__(self, num_of_workers, tasks_lookout, tool_inventory):
+    def __init__(self, num_of_workers, task_lookout, tool_inventory):
         # create workers
         self.workers_queue = asyncio.Queue()
         for i in range(num_of_workers):
-            worker = Worker(tasks_lookout, tool_inventory)
+            worker = Worker(task_lookout, tool_inventory)
             self.workers_queue.put_nowait(worker)
 
     async def get_worker(self):

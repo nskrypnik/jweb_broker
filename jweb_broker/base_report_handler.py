@@ -1,3 +1,4 @@
+from .job_states import IDLE
 
 class BaseReportHandler:
 
@@ -5,8 +6,8 @@ class BaseReportHandler:
         self.db = db
         self.jobs_collection = jobs_collection
 
-    def add_new_job(self, job_data):
-        pass
+    async def add_new_job(self, job_data):
+        await self.jobs_collection.insert_one(dict(data=job_data, state=IDLE))
 
-    def handle(self, report):
+    async def handle(self, report):
         pass

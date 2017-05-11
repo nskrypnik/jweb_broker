@@ -11,12 +11,12 @@ class DummyTask(BaseTask):
     async def do(self):
         print('I\'m dummy task #%s' % self.context['id'])
 
-class TasksLookout(BaseTaskLookout):
+class TaskLookout(BaseTaskLookout):
     def find(self, job_data):
-        return DummyTask(job_data.get('data', {}))
+        return DummyTask(job_data)
 
 class ReportHandler(BaseReportHandler):
-    def handle(self, report):
+    async def handle(self, report):
         print('Got report %s' % report.success)
 
 async def create_jobs():
@@ -28,6 +28,7 @@ async def create_jobs():
     for i in range(10):
         job_data = dict(state=IDLE, data=dict(id=i))
         await jobs_collection.insert_one(job_data)
+    print('Jobs are created in %s' % JOBS_COLLECTION_NAME)
 
 
 def main():
@@ -37,7 +38,7 @@ def main():
     broker = Broker(
         loop=loop,
         db_name='test',
-        tasks_lookout=TasksLookout(),
+        task_lookout=TaskLookout(),
         tool_inventory_class=BaseToolInventory,
         report_handler_class=ReportHandler
     )

@@ -7,6 +7,7 @@ class BaseTask:
     '''
 
     tools = []
+    info = {} # additional task info for Report Handler
 
     def __init__(self, context):
         self.tool_box = None
@@ -17,7 +18,7 @@ class BaseTask:
         self.tool_box = tool_box
 
     async def perform(self):
-        self.report = TaskReport()
+        self.report = TaskReport(self.info)
         try:
             await self.do()
             if not self.report.failed:
